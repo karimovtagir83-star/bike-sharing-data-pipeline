@@ -1,0 +1,96 @@
+CREATE TABLE bicycle_rental(
+    instant INTEGER PRIMARY KEY,
+    dteday DATE,
+    season INTEGER,
+    yr INTEGER,
+    mnth INTEGER,
+    hr INTEGER,
+    holiday INTEGER,
+    weekday INTEGER,
+    workingday INTEGER,
+    weathersit INTEGER,
+    temp DOUBLE PRECISION,
+    atemp DOUBLE PRECISION,
+    hum DOUBLE PRECISION,
+    windspeed DOUBLE PRECISION,
+    casual INTEGER,
+    registered INTEGER,
+    cnt INTEGER
+);
+
+SELECT COUNT(*)
+FROM bicycle_rental;
+
+SELECT *
+FROM bicycle_rental
+LIMIT 100;
+
+SELECT hr, AVG(cnt)
+FROM bicycle_rental
+GROUP BY hr
+ORDER BY AVG(cnt) DESC;
+
+
+WITH avg_rentals AS (
+    SELECT
+    AVG(CASE WHEN workingday = 0 THEN cnt END) AS non_working_day,
+    AVG(CASE WHEN workingday = 1 THEN cnt END) AS working_day
+    FROM bicycle_rental
+)
+
+SELECT *, non_working_day - working_day as Difference
+FROM avg_rentals;
+
+
+SELECT 
+AVG(CASE WHEN season = 1 THEN cnt END) AS winter,
+AVG(CASE WHEN season = 2 THEN cnt END) AS spring,
+AVG(CASE WHEN season = 3 THEN cnt END) AS summer,
+AVG(CASE WHEN season = 4 THEN cnt END) AS autumn
+FROM bicycle_rental;
+
+SELECT dteday, SUM(cnt)
+FROM bicycle_rental
+GROUP BY dteday
+ORDER BY SUM(cnt) DESC
+LIMIT 5;
+
+WITH row AS (
+    SELECT season, hr AS peak_hour, AVG(cnt) AS avg_cnt
+    FROM bicycle_rental
+    GROUP BY season, hr
+    ORDER BY season
+),
+
+ranked AS ( 
+    SELECT season, peak_hour, avg_cnt,  ROW_NUMBER() OVER (
+    PARTITION BY season
+    ORDER BY avg_cnt DESC
+) AS rn
+FROM row
+)
+
+SELECT season, peak_hour, avg_cnt
+FROM ranked
+WHERE rn = 1;
+
+WITH row AS (
+    SELECT season, weekday, AVG(cnt) AS avg_cnt
+    FROM bicycle_rental
+    WHERE workingday = 1
+    GROUP BY season, weekday
+),
+
+row1 AS (
+    SELECT *, row_number() OVER(
+        PARTITION BY season
+        ORDER BY avg_cnt DESC
+    ) AS rn
+    FROM row
+)
+
+SELECT season, weekday, avg_cnt
+FROM row1
+WHERE rn = 1
+
+
