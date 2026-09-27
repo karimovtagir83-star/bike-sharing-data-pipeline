@@ -1,0 +1,8 @@
+numpy
+pandas
+matplotlib
+plotly
+psycopg[binary]
+sqlalchemy
+jupyter
+ipykernel
